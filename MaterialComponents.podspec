@@ -5,9 +5,9 @@ Pod::Spec.new do |mdc|
   mdc.version      = "124.2.0"
   mdc.authors      = "The Material Components authors."
   mdc.summary      = "A collection of stand-alone production-ready UI libraries focused on design details."
-  mdc.homepage     = "https://github.com/material-components/material-components-ios"
+  mdc.homepage     = "https://github.com/goodboygb1/material-components-ios"
   mdc.license      = "Apache 2.0"
-  mdc.source       = { :git => "https://github.com/material-components/material-components-ios.git",
+  mdc.source       = { :git => "https://github.com/goodboygb1/material-components-ios.git",
                        :tag => "v#{mdc.version}" }
   mdc.platform     = :ios
   mdc.requires_arc = true
