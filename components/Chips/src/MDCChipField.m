@@ -51,49 +51,49 @@ const UIEdgeInsets MDCChipFieldDefaultContentEdgeInsets = {
 @implementation MDCChipFieldTextField
 
 - (CGRect)textRectForBounds:(CGRect)bounds {
-  CGRect textRect = [super textRectForBounds:bounds];
-  if (self.effectiveUserInterfaceLayoutDirection == UIUserInterfaceLayoutDirectionRightToLeft) {
-    textRect = MDFRectFlippedHorizontally(textRect, CGRectGetWidth(self.bounds));
-    textRect.origin.x += 5;
-  }
-  return textRect;
+    CGRect textRect = [super textRectForBounds:bounds];
+    if (self.effectiveUserInterfaceLayoutDirection == UIUserInterfaceLayoutDirectionRightToLeft) {
+        textRect = MDFRectFlippedHorizontally(textRect, CGRectGetWidth(self.bounds));
+        textRect.origin.x += 5;
+    }
+    return textRect;
 }
 
 #pragma mark UIKeyInput
 
 - (void)deleteBackward {
-  if (self.text.length == 0) {
-    [self.deletionDelegate textFieldShouldRespondToDeleteBackward:self];
-  }
-  [super deleteBackward];
+    if (self.text.length == 0) {
+        [self.deletionDelegate textFieldShouldRespondToDeleteBackward:self];
+    }
+    [super deleteBackward];
 }
 
 #if MDC_CHIPFIELD_PRIVATE_API_BUG_FIX && \
-    !(defined(__IPHONE_8_3) && (__IPHONE_OS_VERSION_MIN_REQUIRED >= __IPHONE_8_3))
+!(defined(__IPHONE_8_3) && (__IPHONE_OS_VERSION_MIN_REQUIRED >= __IPHONE_8_3))
 
 // WARNING: This is a private method, see the warning in MDCChipField.h.
 // This is only compiled if you explicitly defined MDC_CHIPFIELD_PRIVATE_API_BUG_FIX yourself, and
 // you are targeting an iOS version less than 8.3.
 - (BOOL)keyboardInputShouldDelete:(UITextField *)textField {
-  BOOL shouldDelete = YES;
-  if ([UITextField instancesRespondToSelector:_cmd]) {
-    // clang-format off
-    BOOL (*keyboardInputShouldDelete)(id, SEL, UITextField *) =
+    BOOL shouldDelete = YES;
+    if ([UITextField instancesRespondToSelector:_cmd]) {
+        // clang-format off
+        BOOL (*keyboardInputShouldDelete)(id, SEL, UITextField *) =
         (BOOL(*)(id, SEL, UITextField *))[UITextField instanceMethodForSelector:_cmd];
-    // clang-format on
-    if (keyboardInputShouldDelete) {
-      shouldDelete = keyboardInputShouldDelete(self, _cmd, textField);
-      NSOperatingSystemVersion minimumVersion = {8, 0, 0};
-      NSOperatingSystemVersion maximumVersion = {8, 3, 0};
-      NSProcessInfo *processInfo = [NSProcessInfo processInfo];
-      BOOL isIos8 = [processInfo isOperatingSystemAtLeastVersion:minimumVersion];
-      BOOL isLessThanIos8_3 = ![processInfo isOperatingSystemAtLeastVersion:maximumVersion];
-      if (![textField.text length] && isIos8 && isLessThanIos8_3) {
-        [self deleteBackward];
-      }
+        // clang-format on
+        if (keyboardInputShouldDelete) {
+            shouldDelete = keyboardInputShouldDelete(self, _cmd, textField);
+            NSOperatingSystemVersion minimumVersion = {8, 0, 0};
+            NSOperatingSystemVersion maximumVersion = {8, 3, 0};
+            NSProcessInfo *processInfo = [NSProcessInfo processInfo];
+            BOOL isIos8 = [processInfo isOperatingSystemAtLeastVersion:minimumVersion];
+            BOOL isLessThanIos8_3 = ![processInfo isOperatingSystemAtLeastVersion:maximumVersion];
+            if (![textField.text length] && isIos8 && isLessThanIos8_3) {
+                [self deleteBackward];
+            }
+        }
     }
-  }
-  return shouldDelete;
+    return shouldDelete;
 }
 
 #endif
@@ -101,598 +101,601 @@ const UIEdgeInsets MDCChipFieldDefaultContentEdgeInsets = {
 #pragma mark - UIAccessibility
 
 - (CGRect)accessibilityFrame {
-  CGRect frame = [super accessibilityFrame];
-  return CGRectMake(frame.origin.x + self.textInsets.left, frame.origin.y,
-                    frame.size.width - self.textInsets.left, frame.size.height);
+    CGRect frame = [super accessibilityFrame];
+    return CGRectMake(frame.origin.x + self.textInsets.left, frame.origin.y,
+                      frame.size.width - self.textInsets.left, frame.size.height);
 }
 
 @end
 
 @interface MDCChipField () <MDCChipFieldTextFieldDelegate,
-                            MDCTextInputPositioningDelegate,
-                            UITextFieldDelegate>
+MDCTextInputPositioningDelegate,
+UITextFieldDelegate>
 @end
 
 @implementation MDCChipField {
-  NSMutableArray<MDCChipView *> *_chips;
+    NSMutableArray<MDCChipView *> *_chips;
 }
 
 - (instancetype)initWithFrame:(CGRect)frame {
-  self = [super initWithFrame:frame];
-  if (self) {
-    [self commonMDCChipFieldInit];
+    self = [super initWithFrame:frame];
+    if (self) {
+        [self commonMDCChipFieldInit];
 
-    _chips = [NSMutableArray array];
+        _chips = [NSMutableArray array];
 
-    MDCChipFieldTextField *chipFieldTextField =
+        MDCChipFieldTextField *chipFieldTextField =
         [[MDCChipFieldTextField alloc] initWithFrame:self.bounds];
-    chipFieldTextField.underline.hidden = YES;
-    chipFieldTextField.delegate = self;
-    chipFieldTextField.deletionDelegate = self;
-    chipFieldTextField.positioningDelegate = self;
-    chipFieldTextField.accessibilityTraits = UIAccessibilityTraitNone;
-    chipFieldTextField.autocorrectionType = UITextAutocorrectionTypeNo;
-    chipFieldTextField.autocapitalizationType = UITextAutocapitalizationTypeNone;
-    chipFieldTextField.keyboardType = MDCChipFieldDefaultKeyboardType;
-    // Listen for notifications posted when the text field is the first responder.
-    [[NSNotificationCenter defaultCenter] addObserver:self
-                                             selector:@selector(textFieldDidChange)
-                                                 name:UITextFieldTextDidChangeNotification
-                                               object:chipFieldTextField];
-    // Also listen for notifications posted when the text field is not the first responder.
-    [[NSNotificationCenter defaultCenter] addObserver:self
-                                             selector:@selector(textFieldDidChange)
-                                                 name:MDCTextFieldTextDidSetTextNotification
-                                               object:chipFieldTextField];
-    [self addSubview:chipFieldTextField];
-    _textField = chipFieldTextField;
-  }
-  return self;
+        chipFieldTextField.underline.hidden = YES;
+        chipFieldTextField.delegate = self;
+        chipFieldTextField.deletionDelegate = self;
+        chipFieldTextField.positioningDelegate = self;
+        chipFieldTextField.accessibilityTraits = UIAccessibilityTraitNone;
+        chipFieldTextField.autocorrectionType = UITextAutocorrectionTypeNo;
+        chipFieldTextField.autocapitalizationType = UITextAutocapitalizationTypeNone;
+        chipFieldTextField.keyboardType = MDCChipFieldDefaultKeyboardType;
+        // Listen for notifications posted when the text field is the first responder.
+        [[NSNotificationCenter defaultCenter] addObserver:self
+                                                 selector:@selector(textFieldDidChange)
+                                                     name:UITextFieldTextDidChangeNotification
+                                                   object:chipFieldTextField];
+        // Also listen for notifications posted when the text field is not the first responder.
+        [[NSNotificationCenter defaultCenter] addObserver:self
+                                                 selector:@selector(textFieldDidChange)
+                                                     name:MDCTextFieldTextDidSetTextNotification
+                                                   object:chipFieldTextField];
+        [self addSubview:chipFieldTextField];
+        _textField = chipFieldTextField;
+    }
+    return self;
 }
 
 - (instancetype)initWithCoder:(NSCoder *)aDecoder {
-  self = [super initWithCoder:aDecoder];
-  if (self) {
-    [self commonMDCChipFieldInit];
-  }
-  return self;
+    self = [super initWithCoder:aDecoder];
+    if (self) {
+        [self commonMDCChipFieldInit];
+    }
+    return self;
 }
 
 - (void)commonMDCChipFieldInit {
-  _chips = [NSMutableArray array];
-  _delimiter = MDCChipFieldDelimiterDefault;
-  _minTextFieldWidth = MDCChipFieldDefaultMinTextFieldWidth;
-  _contentEdgeInsets = MDCChipFieldDefaultContentEdgeInsets;
-  _showPlaceholderWithChips = YES;
-  _chipHeight = 32;
+    _chips = [NSMutableArray array];
+    _delimiter = MDCChipFieldDelimiterDefault;
+    _minTextFieldWidth = MDCChipFieldDefaultMinTextFieldWidth;
+    _contentEdgeInsets = MDCChipFieldDefaultContentEdgeInsets;
+    _showPlaceholderWithChips = YES;
+    _chipHeight = 32;
 }
 
 - (void)layoutSubviews {
-  [super layoutSubviews];
+    [super layoutSubviews];
 
-  CGRect standardizedBounds = CGRectStandardize(self.bounds);
+    CGRect standardizedBounds = CGRectStandardize(self.bounds);
 
-  BOOL isRTL =
-      self.effectiveUserInterfaceLayoutDirection == UIUserInterfaceLayoutDirectionRightToLeft;
+    BOOL isRTL =
+    self.effectiveUserInterfaceLayoutDirection == UIUserInterfaceLayoutDirectionRightToLeft;
 
-  // Calculate the frames for all the chips and set them.
-  NSArray *chipFrames = [self chipFramesForSize:standardizedBounds.size];
-  for (NSUInteger index = 0; index < _chips.count; index++) {
-    MDCChipView *chip = _chips[index];
+    // Calculate the frames for all the chips and set them.
+    NSArray *chipFrames = [self chipFramesForSize:standardizedBounds.size];
+    for (NSUInteger index = 0; index < _chips.count; index++) {
+        MDCChipView *chip = _chips[index];
 
-    CGRect chipFrame = [chipFrames[index] CGRectValue];
-    if (isRTL) {
-      chipFrame = MDFRectFlippedHorizontally(chipFrame, CGRectGetWidth(self.bounds));
+        CGRect chipFrame = [chipFrames[index] CGRectValue];
+        if (isRTL) {
+            chipFrame = MDFRectFlippedHorizontally(chipFrame, CGRectGetWidth(self.bounds));
+        }
+        chip.frame = chipFrame;
     }
-    chip.frame = chipFrame;
-  }
 
-  // Get the last chip frame and calculate the text field frame from that.
-  CGRect lastChipFrame = [chipFrames.lastObject CGRectValue];
-  CGRect textFieldFrame = [self frameForTextFieldForLastChipFrame:lastChipFrame
-                                                    chipFieldSize:standardizedBounds.size];
-  if (isRTL) {
-    textFieldFrame = MDFRectFlippedHorizontally(textFieldFrame, CGRectGetWidth(self.bounds));
-  }
-  BOOL heightChanged = CGRectGetMinY(textFieldFrame) != CGRectGetMinY(self.textField.frame);
-  self.textField.frame = textFieldFrame;
+    // Get the last chip frame and calculate the text field frame from that.
+    CGRect lastChipFrame = [chipFrames.lastObject CGRectValue];
+    CGRect textFieldFrame = [self frameForTextFieldForLastChipFrame:lastChipFrame
+                                                      chipFieldSize:standardizedBounds.size];
+    if (isRTL) {
+        textFieldFrame = MDFRectFlippedHorizontally(textFieldFrame, CGRectGetWidth(self.bounds));
+    }
+    BOOL heightChanged = CGRectGetMinY(textFieldFrame) != CGRectGetMinY(self.textField.frame);
+    self.textField.frame = textFieldFrame;
 
-  [self updateTextFieldPlaceholderText];
-  [self invalidateIntrinsicContentSize];
+    [self updateTextFieldPlaceholderText];
+    [self invalidateIntrinsicContentSize];
 
-  if (heightChanged && [self.delegate respondsToSelector:@selector(chipFieldHeightDidChange:)]) {
-    [self.delegate chipFieldHeightDidChange:self];
-  }
+    if (heightChanged && [self.delegate respondsToSelector:@selector(chipFieldHeightDidChange:)]) {
+        [self.delegate chipFieldHeightDidChange:self];
+    }
 }
 
 - (void)updateTextFieldPlaceholderText {
-  // Place holder label should be hidden if showPlaceholderWithChips is NO and there are chips.
-  // MDCTextField sets the placeholderLabel opacity to 0 if the text field has no text.
-  self.textField.placeholderLabel.hidden = (!self.showPlaceholderWithChips && self.chips.count > 0);
+    // Place holder label should be hidden if showPlaceholderWithChips is NO and there are chips.
+    // MDCTextField sets the placeholderLabel opacity to 0 if the text field has no text.
+    self.textField.placeholderLabel.hidden = (!self.showPlaceholderWithChips && self.chips.count > 0);
 }
 
 + (UIFont *)textFieldFont {
-  return [UIFont systemFontOfSize:[UIFont systemFontSize]];
+    return [UIFont systemFontOfSize:[UIFont systemFontSize]];
 }
 
 - (CGSize)intrinsicContentSize {
-  CGFloat minWidth =
-      MAX(self.minTextFieldWidth + self.contentEdgeInsets.left + self.contentEdgeInsets.right,
-          CGRectGetWidth(self.bounds));
-  return [self sizeThatFits:CGSizeMake(minWidth, CGFLOAT_MAX)];
+    CGFloat minWidth =
+    MAX(self.minTextFieldWidth + self.contentEdgeInsets.left + self.contentEdgeInsets.right,
+        CGRectGetWidth(self.bounds));
+    return [self sizeThatFits:CGSizeMake(minWidth, CGFLOAT_MAX)];
 }
 
 - (CGSize)sizeThatFits:(CGSize)size {
-  NSArray *chipFrames = [self chipFramesForSize:size];
-  CGRect lastChipFrame = [chipFrames.lastObject CGRectValue];
-  CGRect textFieldFrame = [self frameForTextFieldForLastChipFrame:lastChipFrame chipFieldSize:size];
+    NSArray *chipFrames = [self chipFramesForSize:size];
+    CGRect lastChipFrame = [chipFrames.lastObject CGRectValue];
+    CGRect textFieldFrame = [self frameForTextFieldForLastChipFrame:lastChipFrame chipFieldSize:size];
 
-  // Calculate the required size off the text field.
-  // To properly apply bottom inset: Calculate what would be the height if there were a chip
-  // instead of the text field. Then add the bottom inset.
-  CGFloat height = CGRectGetMaxY(textFieldFrame) + self.contentEdgeInsets.bottom +
-                   (self.chipHeight - textFieldFrame.size.height) / 2;
-  CGFloat width = MAX(size.width, self.minTextFieldWidth);
+    // Calculate the required size off the text field.
+    // To properly apply bottom inset: Calculate what would be the height if there were a chip
+    // instead of the text field. Then add the bottom inset.
+    CGFloat height = CGRectGetMaxY(textFieldFrame) + self.contentEdgeInsets.bottom +
+    (self.chipHeight - textFieldFrame.size.height) / 2;
+    CGFloat width = MAX(size.width, self.minTextFieldWidth);
 
-  return CGSizeMake(width, height);
+    return CGSizeMake(width, height);
 }
 
 - (void)clearTextInput {
-  self.textField.text = MDCEmptyTextString;
-  [self updateTextFieldPlaceholderText];
+    self.textField.text = MDCEmptyTextString;
+    [self updateTextFieldPlaceholderText];
 }
 
 - (void)setChips:(NSArray<MDCChipView *> *)chips {
-  if ([_chips isEqual:chips]) {
-    return;
-  }
+    if ([_chips isEqual:chips]) {
+        return;
+    }
 
-  for (MDCChipView *chip in _chips) {
-    [self removeChipSubview:chip];
-  }
+    for (MDCChipView *chip in _chips) {
+        [self removeChipSubview:chip];
+    }
 
-  _chips = [chips mutableCopy];
-  for (MDCChipView *chip in _chips) {
-    [self addChipSubview:chip];
-  }
-  [self setNeedsLayout];
+    _chips = [chips mutableCopy];
+    for (MDCChipView *chip in _chips) {
+        [self addChipSubview:chip];
+    }
+    [self setNeedsLayout];
 }
 
 - (NSArray<MDCChipView *> *)chips {
-  return [NSArray arrayWithArray:_chips];
+    return [NSArray arrayWithArray:_chips];
 }
 
 - (BOOL)becomeFirstResponder {
-  return [self.textField becomeFirstResponder];
+    return [self.textField becomeFirstResponder];
 }
 
 - (BOOL)resignFirstResponder {
-  [super resignFirstResponder];
-  return [self.textField resignFirstResponder];
+    [super resignFirstResponder];
+    return [self.textField resignFirstResponder];
 }
 
 - (void)addChip:(MDCChipView *)chip {
-  // Note that |chipField:shouldAddChip| is only called in |createNewChipFromInput| when it is
-  // necessary to restrict chip creation based on input text generated in the user interface.
-  // Clients calling |addChip| directly programmatically are expected to handle such restrictions
-  // themselves rather than using |chipField:shouldAddChip| to prevent chips from being added.
-  [_chips addObject:chip];
-  [self addChipSubview:chip];
-  if ([self.delegate respondsToSelector:@selector(chipField:didAddChip:)]) {
-    [self.delegate chipField:self didAddChip:chip];
-  }
+    // Note that |chipField:shouldAddChip| is only called in |createNewChipFromInput| when it is
+    // necessary to restrict chip creation based on input text generated in the user interface.
+    // Clients calling |addChip| directly programmatically are expected to handle such restrictions
+    // themselves rather than using |chipField:shouldAddChip| to prevent chips from being added.
+    if (self.showChipsDeleteButton) {
+        [self addClearButtonToChip:chip];
+    }
+    [_chips addObject:chip];
+    [self addChipSubview:chip];
+    if ([self.delegate respondsToSelector:@selector(chipField:didAddChip:)]) {
+        [self.delegate chipField:self didAddChip:chip];
+    }
 
-  [self.textField setNeedsLayout];
-  [self setNeedsLayout];
+    [self.textField setNeedsLayout];
+    [self setNeedsLayout];
 }
 
 - (void)removeChip:(MDCChipView *)chip {
-  [_chips removeObject:chip];
-  [self removeChipSubview:chip];
-  if ([self.delegate respondsToSelector:@selector(chipField:didRemoveChip:)]) {
-    [self.delegate chipField:self didRemoveChip:chip];
-  }
-  [self.textField setNeedsLayout];
-  [self setNeedsLayout];
+    [_chips removeObject:chip];
+    [self removeChipSubview:chip];
+    if ([self.delegate respondsToSelector:@selector(chipField:didRemoveChip:)]) {
+        [self.delegate chipField:self didRemoveChip:chip];
+    }
+    [self.textField setNeedsLayout];
+    [self setNeedsLayout];
 }
 
 - (void)removeSelectedChips {
-  NSMutableArray *chipsToRemove = [NSMutableArray array];
-  for (MDCChipView *chip in self.chips) {
-    if (chip.isSelected) {
-      [chipsToRemove addObject:chip];
+    NSMutableArray *chipsToRemove = [NSMutableArray array];
+    for (MDCChipView *chip in self.chips) {
+        if (chip.isSelected) {
+            [chipsToRemove addObject:chip];
+        }
     }
-  }
-  for (MDCChipView *chip in chipsToRemove) {
-    [self removeChip:chip];
-  }
+    for (MDCChipView *chip in chipsToRemove) {
+        [self removeChip:chip];
+    }
 }
 
 - (void)selectChip:(MDCChipView *)chip {
-  [self deselectAllChipsExceptChip:chip];
-  chip.selected = YES;
+    [self deselectAllChipsExceptChip:chip];
+    chip.selected = YES;
 }
 
 - (void)selectLastChip {
-  MDCChipView *lastChip = self.chips.lastObject;
-  [self deselectAllChipsExceptChip:lastChip];
-  lastChip.selected = YES;
-  UIAccessibilityPostNotification(UIAccessibilityAnnouncementNotification,
-                                  [lastChip accessibilityLabel]);
+    MDCChipView *lastChip = self.chips.lastObject;
+    [self deselectAllChipsExceptChip:lastChip];
+    lastChip.selected = YES;
+    UIAccessibilityPostNotification(UIAccessibilityAnnouncementNotification,
+                                    [lastChip accessibilityLabel]);
 }
 
 - (void)deselectAllChips {
-  [self deselectAllChipsExceptChip:nil];
+    [self deselectAllChipsExceptChip:nil];
 }
 
 - (void)deselectAllChipsExceptChip:(MDCChipView *)chip {
-  for (MDCChipView *otherChip in self.chips) {
-    if (chip != otherChip) {
-      otherChip.selected = NO;
+    for (MDCChipView *otherChip in self.chips) {
+        if (chip != otherChip) {
+            otherChip.selected = NO;
+        }
     }
-  }
 }
 
 - (void)setContentEdgeInsets:(UIEdgeInsets)contentEdgeInsets {
-  if (!UIEdgeInsetsEqualToEdgeInsets(_contentEdgeInsets, contentEdgeInsets)) {
-    _contentEdgeInsets = contentEdgeInsets;
-    [self setNeedsLayout];
-  }
+    if (!UIEdgeInsetsEqualToEdgeInsets(_contentEdgeInsets, contentEdgeInsets)) {
+        _contentEdgeInsets = contentEdgeInsets;
+        [self setNeedsLayout];
+    }
 }
 
 - (void)setMinTextFieldWidth:(CGFloat)minTextFieldWidth {
-  if (_minTextFieldWidth != minTextFieldWidth) {
-    _minTextFieldWidth = minTextFieldWidth;
-    [self setNeedsLayout];
-  }
+    if (_minTextFieldWidth != minTextFieldWidth) {
+        _minTextFieldWidth = minTextFieldWidth;
+        [self setNeedsLayout];
+    }
 }
 
 - (void)commitInput {
-  if (![self isTextFieldEmpty]) {
-    [self createNewChipFromInput];
-  }
+    if (![self isTextFieldEmpty]) {
+        [self createNewChipFromInput];
+    }
 }
 
 - (void)createNewChipFromInput {
-  NSString *strippedTitle = [self.textField.text
-      stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
-  if (strippedTitle.length > 0) {
-    MDCChipView *chip = [[MDCChipView alloc] init];
-    chip.titleLabel.text = strippedTitle;
-    if (self.showChipsDeleteButton) {
-      [self addClearButtonToChip:chip];
+    NSString *strippedTitle = [self.textField.text
+                               stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+    if (strippedTitle.length > 0) {
+        MDCChipView *chip = [[MDCChipView alloc] init];
+        chip.titleLabel.text = strippedTitle;
+        if (self.showChipsDeleteButton) {
+            [self addClearButtonToChip:chip];
+        }
+        BOOL shouldAddChip = YES;
+        if ([self.delegate respondsToSelector:@selector(chipField:shouldAddChip:)]) {
+            shouldAddChip = [self.delegate chipField:self shouldAddChip:chip];
+        }
+        if (shouldAddChip) {
+            [self addChip:chip];
+            [self clearTextInput];
+        }
+    } else {
+        [self clearTextInput];
     }
-    BOOL shouldAddChip = YES;
-    if ([self.delegate respondsToSelector:@selector(chipField:shouldAddChip:)]) {
-      shouldAddChip = [self.delegate chipField:self shouldAddChip:chip];
-    }
-    if (shouldAddChip) {
-      [self addChip:chip];
-      [self clearTextInput];
-    }
-  } else {
-    [self clearTextInput];
-  }
 }
 
 - (void)addClearButtonToChip:(MDCChipView *)chip {
-  MDCChipViewDeleteButton *clearButton = [[MDCChipViewDeleteButton alloc] init];
-  chip.accessoryView = clearButton;
-  [clearButton addTarget:self
-                  action:@selector(deleteChip:)
-        forControlEvents:UIControlEventTouchUpInside];
+    MDCChipViewDeleteButton *clearButton = [[MDCChipViewDeleteButton alloc] init];
+    chip.accessoryView = clearButton;
+    [clearButton addTarget:self
+                    action:@selector(deleteChip:)
+          forControlEvents:UIControlEventTouchUpInside];
 }
 
 - (void)deleteChip:(id)sender {
-  UIControl *deleteButton = (UIControl *)sender;
-  MDCChipView *chip = (MDCChipView *)deleteButton.superview;
-  [self removeChip:chip];
-  [self clearTextInput];
+    UIControl *deleteButton = (UIControl *)sender;
+    MDCChipView *chip = (MDCChipView *)deleteButton.superview;
+    [self removeChip:chip];
+    [self clearTextInput];
 }
 
 - (void)chipTapped:(id)sender {
-  BOOL shouldBecomeFirstResponder = YES;
-  if ([self.delegate respondsToSelector:@selector(chipFieldShouldBecomeFirstResponder:)]) {
-    shouldBecomeFirstResponder = [self.delegate chipFieldShouldBecomeFirstResponder:self];
-  }
-  if (shouldBecomeFirstResponder) {
-    [self becomeFirstResponder];
-  }
-  MDCChipView *chip = (MDCChipView *)sender;
-  if ([self.delegate respondsToSelector:@selector(chipField:didTapChip:)]) {
-    [self.delegate chipField:self didTapChip:chip];
-  }
+    BOOL shouldBecomeFirstResponder = YES;
+    if ([self.delegate respondsToSelector:@selector(chipFieldShouldBecomeFirstResponder:)]) {
+        shouldBecomeFirstResponder = [self.delegate chipFieldShouldBecomeFirstResponder:self];
+    }
+    if (shouldBecomeFirstResponder) {
+        [self becomeFirstResponder];
+    }
+    MDCChipView *chip = (MDCChipView *)sender;
+    if ([self.delegate respondsToSelector:@selector(chipField:didTapChip:)]) {
+        [self.delegate chipField:self didTapChip:chip];
+    }
 }
 
 #pragma mark - MDCChipFieldTextFieldDelegate
 
 - (void)textFieldShouldRespondToDeleteBackward:(UITextField *)textField {
-  if ([self isAnyChipSelected]) {
-    [self removeSelectedChips];
-    [self deselectAllChips];
-  } else {
-    [self selectLastChip];
-  }
+    if ([self isAnyChipSelected]) {
+        [self removeSelectedChips];
+        [self deselectAllChips];
+    } else {
+        [self selectLastChip];
+    }
 }
 
 #pragma mark - UITextFieldDelegate
 
 - (BOOL)textFieldShouldBeginEditing:(UITextField *)textField {
-  BOOL shouldBeginEditing = YES;
-  if ([self.delegate respondsToSelector:@selector(chipFieldShouldBeginEditing:)]) {
-    shouldBeginEditing = [self.delegate chipFieldShouldBeginEditing:self];
-  }
-  return shouldBeginEditing;
+    BOOL shouldBeginEditing = YES;
+    if ([self.delegate respondsToSelector:@selector(chipFieldShouldBeginEditing:)]) {
+        shouldBeginEditing = [self.delegate chipFieldShouldBeginEditing:self];
+    }
+    return shouldBeginEditing;
 }
 
 - (BOOL)textFieldShouldEndEditing:(UITextField *)textField {
-  BOOL shouldEndEditing = YES;
-  if ([self.delegate respondsToSelector:@selector(chipFieldShouldEndEditing:)]) {
-    shouldEndEditing = [self.delegate chipFieldShouldEndEditing:self];
-  }
-  return shouldEndEditing;
+    BOOL shouldEndEditing = YES;
+    if ([self.delegate respondsToSelector:@selector(chipFieldShouldEndEditing:)]) {
+        shouldEndEditing = [self.delegate chipFieldShouldEndEditing:self];
+    }
+    return shouldEndEditing;
 }
 
 - (void)textFieldDidBeginEditing:(UITextField *)textField {
-  if (textField == self.textField) {
-    [self deselectAllChips];
-  }
-  if ([self.delegate respondsToSelector:@selector(chipFieldDidBeginEditing:)]) {
-    [self.delegate chipFieldDidBeginEditing:self];
-  }
+    if (textField == self.textField) {
+        [self deselectAllChips];
+    }
+    if ([self.delegate respondsToSelector:@selector(chipFieldDidBeginEditing:)]) {
+        [self.delegate chipFieldDidBeginEditing:self];
+    }
 }
 
 - (void)textFieldDidEndEditing:(UITextField *)textField {
-  if ((self.delimiter & MDCChipFieldDelimiterDidEndEditing) == MDCChipFieldDelimiterDidEndEditing) {
-    if (textField == self.textField) {
-      [self commitInput];
+    if ((self.delimiter & MDCChipFieldDelimiterDidEndEditing) == MDCChipFieldDelimiterDidEndEditing) {
+        if (textField == self.textField) {
+            [self commitInput];
+        }
     }
-  }
-  if ([self.delegate respondsToSelector:@selector(chipFieldDidEndEditing:)]) {
-    [self.delegate chipFieldDidEndEditing:self];
-  }
+    if ([self.delegate respondsToSelector:@selector(chipFieldDidEndEditing:)]) {
+        [self.delegate chipFieldDidEndEditing:self];
+    }
 }
 
 - (BOOL)textFieldShouldReturn:(UITextField *)textField {
-  BOOL shouldReturn = YES;
+    BOOL shouldReturn = YES;
 
-  // Chip field content view will handle |chipFieldShouldReturn| if the client is not using chip
-  // field directly. If the client uses chip field directly without the content view and has not
-  // implemented |chipFieldShouldReturn|, then a chip should always be created.
-  if ([self.delegate respondsToSelector:@selector(chipFieldShouldReturn:)]) {
-    shouldReturn = [self.delegate chipFieldShouldReturn:self];
-  }
-  if (shouldReturn) {
-    [self createNewChipWithTextField:textField delimiter:MDCChipFieldDelimiterReturn];
-  }
+    // Chip field content view will handle |chipFieldShouldReturn| if the client is not using chip
+    // field directly. If the client uses chip field directly without the content view and has not
+    // implemented |chipFieldShouldReturn|, then a chip should always be created.
+    if ([self.delegate respondsToSelector:@selector(chipFieldShouldReturn:)]) {
+        shouldReturn = [self.delegate chipFieldShouldReturn:self];
+    }
+    if (shouldReturn) {
+        [self createNewChipWithTextField:textField delimiter:MDCChipFieldDelimiterReturn];
+    }
 
-  return shouldReturn;
+    return shouldReturn;
 }
 
 - (void)textFieldDidChange {
-  [self deselectAllChips];
-  [self createNewChipWithTextField:self.textField delimiter:MDCChipFieldDelimiterSpace];
+    [self deselectAllChips];
+    [self createNewChipWithTextField:self.textField delimiter:MDCChipFieldDelimiterSpace];
 
-  CGRect lastChipFrame = self.chips.lastObject.frame;
-  if (!CGRectIsEmpty(lastChipFrame)) {
-    BOOL isTextTooWide = [self textInputDesiredWidth] >= [self availableWidthForTextInput];
-    BOOL isTextFieldOnSameLineAsChips =
+    CGRect lastChipFrame = self.chips.lastObject.frame;
+    if (!CGRectIsEmpty(lastChipFrame)) {
+        BOOL isTextTooWide = [self textInputDesiredWidth] >= [self availableWidthForTextInput];
+        BOOL isTextFieldOnSameLineAsChips =
         CGRectGetMidY(self.textField.frame) == CGRectGetMidY(lastChipFrame);
-    if (isTextTooWide && isTextFieldOnSameLineAsChips) {
-      // The text is on the same line as the chips and doesn't fit
-      // Trigger layout to move the text field down to the next line
-      [self setNeedsLayout];
-    } else if (!isTextTooWide && !isTextFieldOnSameLineAsChips) {
-      // The text is on the line below the chips but can fit on the same line
-      // Trigger layout to move the text field up to the previous line
-      [self setNeedsLayout];
+        if (isTextTooWide && isTextFieldOnSameLineAsChips) {
+            // The text is on the same line as the chips and doesn't fit
+            // Trigger layout to move the text field down to the next line
+            [self setNeedsLayout];
+        } else if (!isTextTooWide && !isTextFieldOnSameLineAsChips) {
+            // The text is on the line below the chips but can fit on the same line
+            // Trigger layout to move the text field up to the previous line
+            [self setNeedsLayout];
+        }
     }
-  }
 
-  if ([self.delegate respondsToSelector:@selector(chipField:didChangeInput:)]) {
-    [self.delegate chipField:self didChangeInput:[self.textField.text copy]];
-  }
+    if ([self.delegate respondsToSelector:@selector(chipField:didChangeInput:)]) {
+        [self.delegate chipField:self didChangeInput:[self.textField.text copy]];
+    }
 }
 
 #pragma mark - Private
 
 - (void)removeChipSubview:(MDCChipView *)chip {
-  [chip removeFromSuperview];
-  [chip removeTarget:chip.superview
+    [chip removeFromSuperview];
+    [chip removeTarget:chip.superview
                 action:@selector(chipTapped:)
       forControlEvents:UIControlEventTouchUpInside];
 }
 
 - (void)addChipSubview:(MDCChipView *)chip {
-  if (chip.superview != self) {
-    [chip addTarget:self
-                  action:@selector(chipTapped:)
-        forControlEvents:UIControlEventTouchUpInside];
-    [self addSubview:chip];
-  }
+    if (chip.superview != self) {
+        [chip addTarget:self
+                 action:@selector(chipTapped:)
+       forControlEvents:UIControlEventTouchUpInside];
+        [self addSubview:chip];
+    }
 }
 
 - (void)createNewChipWithTextField:(UITextField *)textField
                          delimiter:(MDCChipFieldDelimiter)delimiter {
-  if ((self.delimiter & delimiter) == delimiter && textField.text.length > 0) {
-    if (delimiter == MDCChipFieldDelimiterReturn) {
-      [self createNewChipFromInput];
-    } else if (delimiter == MDCChipFieldDelimiterSpace) {
-      NSString *lastChar = [textField.text substringFromIndex:textField.text.length - 1];
-      if ([lastChar isEqualToString:MDCChipDelimiterSpace]) {
-        [self createNewChipFromInput];
-      }
+    if ((self.delimiter & delimiter) == delimiter && textField.text.length > 0) {
+        if (delimiter == MDCChipFieldDelimiterReturn) {
+            [self createNewChipFromInput];
+        } else if (delimiter == MDCChipFieldDelimiterSpace) {
+            NSString *lastChar = [textField.text substringFromIndex:textField.text.length - 1];
+            if ([lastChar isEqualToString:MDCChipDelimiterSpace]) {
+                [self createNewChipFromInput];
+            }
+        }
     }
-  }
 }
 
 - (BOOL)isAnyChipSelected {
-  for (MDCChipView *chip in self.chips) {
-    if (chip.isSelected) {
-      return YES;
+    for (MDCChipView *chip in self.chips) {
+        if (chip.isSelected) {
+            return YES;
+        }
     }
-  }
-  return NO;
+    return NO;
 }
 
 - (BOOL)isTextFieldEmpty {
-  return self.textField.text.length == 0;
+    return self.textField.text.length == 0;
 }
 
 #pragma mark - Sizing
 
 - (NSArray<NSValue *> *)chipFramesForSize:(CGSize)size {
-  NSMutableArray *chipFrames = [NSMutableArray arrayWithCapacity:self.chips.count];
-  CGFloat chipFieldMaxX = size.width - self.contentEdgeInsets.right;
-  CGFloat maxWidth = size.width - self.contentEdgeInsets.left - self.contentEdgeInsets.right;
-  NSUInteger row = 0;
-  CGFloat currentOriginX = self.contentEdgeInsets.left;
+    NSMutableArray *chipFrames = [NSMutableArray arrayWithCapacity:self.chips.count];
+    CGFloat chipFieldMaxX = size.width - self.contentEdgeInsets.right;
+    CGFloat maxWidth = size.width - self.contentEdgeInsets.left - self.contentEdgeInsets.right;
+    NSUInteger row = 0;
+    CGFloat currentOriginX = self.contentEdgeInsets.left;
 
-  for (MDCChipView *chip in self.chips) {
-    CGSize chipSize = [chip sizeThatFits:CGSizeMake(maxWidth, self.chipHeight)];
-    chipSize.width = MIN(chipSize.width, maxWidth);
+    for (MDCChipView *chip in self.chips) {
+        CGSize chipSize = [chip sizeThatFits:CGSizeMake(maxWidth, self.chipHeight)];
+        chipSize.width = MIN(chipSize.width, maxWidth);
 
-    CGFloat availableWidth = chipFieldMaxX - currentOriginX;
-    // Check if the chip will fit on the current line.  If it won't fit and the available width
-    // is the maximum width, it won't fit on any line. Put it on the current one and move on.
-    if (chipSize.width > availableWidth &&
-        availableWidth < (chipFieldMaxX - self.contentEdgeInsets.right)) {
-      row++;
-      currentOriginX = self.contentEdgeInsets.left;
-    }
-    CGFloat currentOriginY =
+        CGFloat availableWidth = chipFieldMaxX - currentOriginX;
+        // Check if the chip will fit on the current line.  If it won't fit and the available width
+        // is the maximum width, it won't fit on any line. Put it on the current one and move on.
+        if (chipSize.width > availableWidth &&
+            availableWidth < (chipFieldMaxX - self.contentEdgeInsets.right)) {
+            row++;
+            currentOriginX = self.contentEdgeInsets.left;
+        }
+        CGFloat currentOriginY =
         self.contentEdgeInsets.top + (row * (self.chipHeight + MDCChipFieldVerticalMargin));
-    CGRect chipFrame = CGRectMake(currentOriginX, currentOriginY, chipSize.width, chipSize.height);
-    [chipFrames addObject:[NSValue valueWithCGRect:chipFrame]];
-    currentOriginX = CGRectGetMaxX(chipFrame) + MDCChipFieldHorizontalMargin;
-  }
-  return [chipFrames copy];
+        CGRect chipFrame = CGRectMake(currentOriginX, currentOriginY, chipSize.width, chipSize.height);
+        [chipFrames addObject:[NSValue valueWithCGRect:chipFrame]];
+        currentOriginX = CGRectGetMaxX(chipFrame) + MDCChipFieldHorizontalMargin;
+    }
+    return [chipFrames copy];
 }
 
 - (CGRect)frameForTextFieldForLastChipFrame:(CGRect)lastChipFrame
                               chipFieldSize:(CGSize)chipFieldSize {
-  CGFloat availableWidth = [self availableWidthForTextInput];
-  CGFloat textFieldHeight = [self.textField sizeThatFits:chipFieldSize].height;
-  CGFloat originY = lastChipFrame.origin.y + (self.chipHeight - textFieldHeight) / 2;
+    CGFloat availableWidth = [self availableWidthForTextInput];
+    CGFloat textFieldHeight = [self.textField sizeThatFits:chipFieldSize].height;
+    CGFloat originY = lastChipFrame.origin.y + (self.chipHeight - textFieldHeight) / 2;
 
-  // If no chip exists, make the text field the full width, adjusted for insets.
-  if (CGRectIsEmpty(lastChipFrame)) {
-    originY += self.contentEdgeInsets.top;
-    return CGRectMake(self.contentEdgeInsets.left, originY, availableWidth, textFieldHeight);
-  }
+    // If no chip exists, make the text field the full width, adjusted for insets.
+    if (CGRectIsEmpty(lastChipFrame)) {
+        originY += self.contentEdgeInsets.top;
+        return CGRectMake(self.contentEdgeInsets.left, originY, availableWidth, textFieldHeight);
+    }
 
-  CGFloat originX = 0;
-  CGFloat textFieldWidth = 0;
-  CGFloat desiredTextWidth = [self textInputDesiredWidth];
-  if (availableWidth < desiredTextWidth) {
-    // The text field doesn't fit on the line with the last chip.
-    originY += self.chipHeight + MDCChipFieldVerticalMargin;
-    originX = self.contentEdgeInsets.left;
-    textFieldWidth =
+    CGFloat originX = 0;
+    CGFloat textFieldWidth = 0;
+    CGFloat desiredTextWidth = [self textInputDesiredWidth];
+    if (availableWidth < desiredTextWidth) {
+        // The text field doesn't fit on the line with the last chip.
+        originY += self.chipHeight + MDCChipFieldVerticalMargin;
+        originX = self.contentEdgeInsets.left;
+        textFieldWidth =
         chipFieldSize.width - self.contentEdgeInsets.left - self.contentEdgeInsets.right;
-  } else {
-    // The text field fits on the line with chips
-    originX += CGRectGetMaxX(lastChipFrame) + MDCChipFieldHorizontalMargin;
-    textFieldWidth = availableWidth;
-  }
+    } else {
+        // The text field fits on the line with chips
+        originX += CGRectGetMaxX(lastChipFrame) + MDCChipFieldHorizontalMargin;
+        textFieldWidth = availableWidth;
+    }
 
-  return CGRectMake(originX, originY, textFieldWidth, textFieldHeight);
+    return CGRectMake(originX, originY, textFieldWidth, textFieldHeight);
 }
 
 - (CGFloat)availableWidthForTextInput {
-  NSArray *chipFrames = [self chipFramesForSize:self.bounds.size];
-  CGFloat boundsWidth = CGRectGetWidth(CGRectStandardize(self.bounds));
-  if (chipFrames.count == 0) {
-    return boundsWidth - (self.contentEdgeInsets.right + self.contentEdgeInsets.left);
-  }
+    NSArray *chipFrames = [self chipFramesForSize:self.bounds.size];
+    CGFloat boundsWidth = CGRectGetWidth(CGRectStandardize(self.bounds));
+    if (chipFrames.count == 0) {
+        return boundsWidth - (self.contentEdgeInsets.right + self.contentEdgeInsets.left);
+    }
 
-  CGRect lastChipFrame = [chipFrames.lastObject CGRectValue];
-  return boundsWidth - CGRectGetMaxX(lastChipFrame) - self.contentEdgeInsets.right;
+    CGRect lastChipFrame = [chipFrames.lastObject CGRectValue];
+    return boundsWidth - CGRectGetMaxX(lastChipFrame) - self.contentEdgeInsets.right;
 }
 
 // The width of the text input + the clear button.
 - (CGFloat)textInputDesiredWidth {
-  CGFloat placeholderDesiredWidth = [self placeholderDesiredWidth];
-  if (!self.textField.text || [self.textField.text isEqualToString:@""]) {
-    return placeholderDesiredWidth;
-  }
+    CGFloat placeholderDesiredWidth = [self placeholderDesiredWidth];
+    if (!self.textField.text || [self.textField.text isEqualToString:@""]) {
+        return placeholderDesiredWidth;
+    }
 
-  UIFont *font = self.textField.placeholderLabel.font;
-  CGRect desiredRect = [self.textField.text
-      boundingRectWithSize:CGSizeMake(UIViewNoIntrinsicMetric, UIViewNoIntrinsicMetric)
-                   options:NSStringDrawingUsesLineFragmentOrigin
-                attributes:@{
-                  NSFontAttributeName : font,
-                }
-                   context:nil];
-  return MAX(placeholderDesiredWidth, CGRectGetWidth(desiredRect) + MDCChipFieldHorizontalMargin +
-                                          self.contentEdgeInsets.right +
-                                          [MDCChipViewDeleteButton imageSideLength]);
+    UIFont *font = self.textField.placeholderLabel.font;
+    CGRect desiredRect = [self.textField.text
+                          boundingRectWithSize:CGSizeMake(UIViewNoIntrinsicMetric, UIViewNoIntrinsicMetric)
+                          options:NSStringDrawingUsesLineFragmentOrigin
+                          attributes:@{
+        NSFontAttributeName : font,
+    }
+                          context:nil];
+    return MAX(placeholderDesiredWidth, CGRectGetWidth(desiredRect) + MDCChipFieldHorizontalMargin +
+               self.contentEdgeInsets.right +
+               [MDCChipViewDeleteButton imageSideLength]);
 }
 
 - (CGFloat)placeholderDesiredWidth {
-  NSString *placeholder = self.textField.placeholder;
-  if (!self.showPlaceholderWithChips && self.chips.count > 0) {
-    placeholder = nil;
-  }
+    NSString *placeholder = self.textField.placeholder;
+    if (!self.showPlaceholderWithChips && self.chips.count > 0) {
+        placeholder = nil;
+    }
 
-  if (placeholder.length == 0) {
-    return self.minTextFieldWidth;
-  }
+    if (placeholder.length == 0) {
+        return self.minTextFieldWidth;
+    }
 
-  UIFont *placeholderFont = self.textField.placeholderLabel.font;
-  CGRect placeholderDesiredRect =
-      [placeholder boundingRectWithSize:CGRectStandardize(self.bounds).size
-                                options:NSStringDrawingUsesLineFragmentOrigin
-                             attributes:@{
-                               NSFontAttributeName : placeholderFont,
-                             }
-                                context:nil];
-  CGFloat placeholderDesiredWidth =
-      CGRectGetWidth(placeholderDesiredRect) + self.contentEdgeInsets.right;
-  return MAX(placeholderDesiredWidth, self.minTextFieldWidth);
+    UIFont *placeholderFont = self.textField.placeholderLabel.font;
+    CGRect placeholderDesiredRect =
+    [placeholder boundingRectWithSize:CGRectStandardize(self.bounds).size
+                              options:NSStringDrawingUsesLineFragmentOrigin
+                           attributes:@{
+        NSFontAttributeName : placeholderFont,
+    }
+                              context:nil];
+    CGFloat placeholderDesiredWidth =
+    CGRectGetWidth(placeholderDesiredRect) + self.contentEdgeInsets.right;
+    return MAX(placeholderDesiredWidth, self.minTextFieldWidth);
 }
 
 #pragma mark - MDCTextInputPositioningDelegate
 
 - (UIEdgeInsets)textInsets:(UIEdgeInsets)defaultInsets
-    withSizeThatFitsWidthHint:(CGFloat)widthHint {
-  defaultInsets.left = MDCChipFieldIndent;
-  return defaultInsets;
+ withSizeThatFitsWidthHint:(CGFloat)widthHint {
+    defaultInsets.left = MDCChipFieldIndent;
+    return defaultInsets;
 }
 
 #pragma mark - UIAccessibilityContainer
 
 - (BOOL)isAccessibilityElement {
-  return NO;
+    return NO;
 }
 
 - (id)accessibilityElementAtIndex:(NSInteger)index {
-  if (index < (NSInteger)self.chips.count) {
-    return self.chips[index];
-  } else if (index == (NSInteger)self.chips.count) {
-    return self.textField;
-  }
+    if (index < (NSInteger)self.chips.count) {
+        return self.chips[index];
+    } else if (index == (NSInteger)self.chips.count) {
+        return self.textField;
+    }
 
-  return nil;
+    return nil;
 }
 
 - (NSInteger)accessibilityElementCount {
-  return self.chips.count + 1;
+    return self.chips.count + 1;
 }
 
 - (NSInteger)indexOfAccessibilityElement:(id)element {
-  if (element == self.textField) {
-    return self.chips.count;
-  }
+    if (element == self.textField) {
+        return self.chips.count;
+    }
 
-  return [self.chips indexOfObject:element];
+    return [self.chips indexOfObject:element];
 }
 
 #pragma mark - Accessibility
 
 - (void)focusTextFieldForAccessibility {
-  UIAccessibilityPostNotification(UIAccessibilityLayoutChangedNotification, self.textField);
+    UIAccessibilityPostNotification(UIAccessibilityLayoutChangedNotification, self.textField);
 }
 
 @end

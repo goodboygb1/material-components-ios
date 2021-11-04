@@ -58,7 +58,7 @@ Pod::Spec.new do |s|
   s.summary      = "This spec is an aggregate of all the Material Components snapshot tests."
   s.homepage     = "https://github.com/material-components/material-components-ios"
   s.license      = 'Apache 2.0'
-  s.source       = { :git => "https://github.com/material-components/material-components-ios.git", :tag => "v#{s.version}" }
+  s.source       = { :git => "https://github.com/goodboygb1/material-components-ios.git", :tag => "v#{s.version}" }
   s.platform     = :ios, '11.0'
   s.requires_arc = true
   s.dependency 'MaterialComponents'
